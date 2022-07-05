@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import CartItem from '../CartItem';
 import Auth from '../../utils/auth';
 import './style.css';
 
 import { useStoreContext } from '../../utils/GlobalState';
-import { TOGGLE_CART } from '../../utils/actions';
+import { TOGGLE_CART, ADD_MULTIPLE_TO_CART } from '../../utils/actions';
+
+
+// import indexed DB helper function
+import { idbPromise } from "../../utils/helpers";
+
 
 const Cart = () => {
   
@@ -29,6 +34,22 @@ const Cart = () => {
     return sum.toFixed(2);
 
   }
+
+
+  // use useEffect hook to retrieve data from cache for cart
+  useEffect(() => {
+
+    async function getCart() {
+      const cart = await idbPromise('cart', 'get');
+      dispatch({ type: ADD_MULTIPLE_TO_CART, products: [...cart] });
+    };
+  
+    // if cart is empty we will check if cart data has been cached
+    // then getCart() function will retrieve it
+    if (!state.cart.length) {
+      getCart();
+    }
+  }, [state.cart.length, dispatch]);
   
 
   // if cart is closed, we will display a different image

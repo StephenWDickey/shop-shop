@@ -4,6 +4,11 @@ import React from 'react';
 import { useStoreContext } from '../../utils/GlobalState';
 import { REMOVE_FROM_CART, UPDATE_CART_QUANTITY } from '../../utils/actions';
 
+
+// import indexedDB helper function
+import { idbPromise } from "../../utils/helpers";
+
+
 const CartItem = ({ item }) => {
 
   // initiate global state function
@@ -13,10 +18,15 @@ const CartItem = ({ item }) => {
 
 
   const removeFromCart = item => {
+    
     dispatch({
       type: REMOVE_FROM_CART,
       _id: item._id
     });
+
+    // if we remove item from cart we will also delete from cache
+    idbPromise('cart', 'delete', { ...item });
+
   };
 
 
@@ -32,6 +42,9 @@ const CartItem = ({ item }) => {
         type: REMOVE_FROM_CART,
         _id: item._id
       });
+
+      // if we alter quantity in cart to 0, delete from cache
+      idbPromise('cart', 'delete', { ...item });
     }
 
     // otherwise UPDATE_CART_QUANTITY
@@ -41,6 +54,10 @@ const CartItem = ({ item }) => {
         _id: item._id,
         purchaseQuantity: parseInt(value)
       });
+
+      // if cart is not empty and we alter the quantity
+      // we will use a PUT request to alter quantity in cache
+      idbPromise('cart', 'put', { ...item, purchaseQuantity: parseInt(value) });
     }
   };
 
