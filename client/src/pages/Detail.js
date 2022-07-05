@@ -15,6 +15,12 @@ import {
 
 import Cart from '../components/Cart';
 
+
+// import IndexedDB helper function
+import { idbPromise } from "../utils/helpers";
+
+
+
 function Detail() {
 
   // declare global state info
@@ -39,15 +45,36 @@ function Detail() {
   // if not, we use data returned from useQuery to set product data
   // of the global state object
   useEffect(() => {
+
     if (products.length) {
       setCurrentProduct(products.find(product => product._id === id));
-    } else if (data) {
+    } 
+    
+    else if (data) {
       dispatch({
         type: UPDATE_PRODUCTS,
         products: data.products
       });
+
+      // store product data in indexedDB cache
+      data.products.forEach((product) => {
+        idbPromise('products', 'put', product);
+      });
     }
-  }, [products, data, dispatch, id]);
+
+
+    // if offline, retrieve data from cache
+    else if (!loading) {
+      
+      idbPromise('products', 'get').then((indexedProducts) => {
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: indexedProducts
+        });
+      });
+
+    }
+  }, [products, data, loading, dispatch, id]);
 
 
   // use dispatch method to execute ADD_TO_CART action
@@ -61,7 +88,10 @@ function Detail() {
         _id: id,
         purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
       });
-    } else {
+    } 
+    
+    
+    else {
       dispatch({
         type: ADD_TO_CART,
         product: { ...currentProduct, purchaseQuantity: 1 }

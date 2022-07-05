@@ -9,6 +9,8 @@ import { useStoreContext } from "../../utils/GlobalState";
 // import actions
 import { UPDATE_CATEGORIES, UPDATE_CURRENT_CATEGORY} from '../../utils/actions';
 
+// import indexedDB helper function
+import { idbPromise } from '../../utils/helpers';
 
 function CategoryMenu({ setCategory }) {
   
@@ -20,7 +22,9 @@ function CategoryMenu({ setCategory }) {
 
   // use our QUERY_CATEGORIES query to assign value for data
   // we assign data to variable called categoryData
-  const { data: categoryData } = useQuery(QUERY_CATEGORIES);
+  // we must also destructure loading variable so we can 
+  // integrate indexedDB cache retrieval
+  const { loading, data: categoryData } = useQuery(QUERY_CATEGORIES);
 
 
   // here we take categoryData then use the dispatch() method
@@ -33,8 +37,27 @@ function CategoryMenu({ setCategory }) {
         type: UPDATE_CATEGORIES,
         categories: categoryData.categories
       });
+
+      // we will store each category object in categories cache
+      categoryData.categories.forEach(category => {
+        idbPromise('categories', 'put', category);
+      });
     }
-  }, [categoryData, dispatch]);
+
+    // if offline
+    else if (!loading) {
+      
+      // get cached data
+      idbPromise('categories', 'get').then(categories => {
+        
+        // update global state with data
+        dispatch({
+          type: UPDATE_CATEGORIES,
+          categories: categories
+        });
+      });
+    }
+  }, [categoryData, loading, dispatch]);
 
   const handleClick = id => {
     dispatch({

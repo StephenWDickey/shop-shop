@@ -8,7 +8,8 @@ const CartItem = ({ item }) => {
 
   // initiate global state function
   // we only destructured dispatch because CartItem does not need state
-  const [ dispatch ] = useStoreContext();
+  // for some reason COMMA MUST BE HERE OR IT DOESNT WORK!!!
+  const [, dispatch ] = useStoreContext();
 
 
   const removeFromCart = item => {

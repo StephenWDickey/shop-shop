@@ -9,6 +9,15 @@ function ProductItem(item) {
   // use data from global state
   const [state, dispatch] = useStoreContext();
 
+  // define properties of item
+  const {
+    image,
+    name,
+    _id,
+    price,
+    quantity
+  } = item;
+
   // define state.cart as cart for easier reading
   const { cart } = state;
 

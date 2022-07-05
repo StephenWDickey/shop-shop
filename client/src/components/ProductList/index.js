@@ -10,6 +10,10 @@ import { useStoreContext } from '../../utils/GlobalState';
 // import action
 import { UPDATE_PRODUCTS } from '../../utils/actions';
 
+
+// import indexedDB helper function
+import { idbPromise } from "../../utils/helpers";
+
 function ProductList() {
 
   // create declaration for global state
@@ -21,18 +25,58 @@ function ProductList() {
   // we will asign our query data to data variable, and also have loading variable
   const { loading, data } = useQuery(QUERY_PRODUCTS);
   
+
+
+  ///////////////////////////////////////////////////////
+
   // take data from query and use dispatch method to update global state with data
   useEffect(() => {
+
+    // if data
     if (data) {
+
+      // store in global state object
       dispatch({
         type: UPDATE_PRODUCTS,
         products: data.products
       });
+
+
+      // AND store data in indexedDB cache
+      data.products.forEach((product) => {
+        
+        // note PUT request to update, we store it in 'products' object store
+        idbPromise('products', 'put', product);
+        
+      });
     }
+
+
+    // now we add in capability to retrieve cached data if offline!
+    // if loading variable doesnt exist in useQuery hook (offline)
+    else if (!loading) {
+
+      // retrieve cached data
+      idbPromise('products', 'get').then((products) => {
+
+        // set cached data to global state for use
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: products
+        });
+      });
+
+    }
+
   // the condition is that we have data then we use the dispatch method
   // remember useEffect takes 2 arguments: a function
   // and a condition
-  }, [data, dispatch]);
+  }, [data, loading, dispatch]);
+  
+
+
+  //////////////////////////////////////////////////////////////
+
   
   function filterProducts() {
 
