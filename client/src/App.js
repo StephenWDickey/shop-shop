@@ -19,6 +19,9 @@ import OrderHistory from './pages/OrderHistory';
 // import storeProvider to import global state variables
 import { StoreProvider } from "./utils/GlobalState";
 
+
+import Success from './pages/Success';
+
 const httpLink = createHttpLink({
   uri: '/graphql',
 });
