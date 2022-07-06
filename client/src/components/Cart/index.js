@@ -6,9 +6,20 @@ import './style.css';
 import { useStoreContext } from '../../utils/GlobalState';
 import { TOGGLE_CART, ADD_MULTIPLE_TO_CART } from '../../utils/actions';
 
-
 // import indexed DB helper function
 import { idbPromise } from "../../utils/helpers";
+
+
+// import useLazyQuery hook
+import { useLazyQuery } from '@apollo/client';
+
+
+import { QUERY_CHECKOUT } from '../../utils/queries';
+
+
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
 
 
 const Cart = () => {
@@ -16,6 +27,9 @@ const Cart = () => {
   // we use global state data
   const [ state, dispatch ] = useStoreContext();
 
+
+  // for lazyQuery
+  const [getCheckout, {data}] = useLazyQuery(QUERY_CHECKOUT);
 
   // use TOGGLE_CART action with dispatch method
   function toggleCart() {
@@ -36,6 +50,20 @@ const Cart = () => {
   }
 
 
+  function submitCheckout() {
+    const productIds = [];
+
+    state.cart.forEach((item) => {
+      for (let i=0; i< item.purchaseQuantity; i++) {
+        productIds.push(item._id);
+      }
+    });
+
+    getCheckout({
+      variables: { products: productIds }
+    });
+  }
+
   // use useEffect hook to retrieve data from cache for cart
   useEffect(() => {
 
@@ -51,6 +79,15 @@ const Cart = () => {
     }
   }, [state.cart.length, dispatch]);
   
+
+  useEffect(() => {
+    if (data) {
+      stripePromise.then((res) => {
+        res.redirectToCheckout({ sessionId: data.checkout.session });
+      });
+    }
+  }, [data]);
+
 
   // if cart is closed, we will display a different image
   // clicking it will change toggleCart to TRUE
@@ -80,7 +117,7 @@ const Cart = () => {
             <strong>Total: ${calculateTotal()}</strong>
             {
               Auth.loggedIn() ?
-                <button>
+                <button onClick={submitCheckout}>
                   Checkout
                 </button>
                 :
